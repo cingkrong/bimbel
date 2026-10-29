@@ -1,0 +1,640 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+enum AdminRole {
+  SUPERADMIN
+  ACADEMIC_ADMIN
+  TUTOR
+  FINANCE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum SubtestType {
+  TWK
+  TIU
+  TKP
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+  HOTS
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+  REFUNDED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  REJECTED
+}
+
+// ==========================
+// ADMIN USER & AUDIT LOGS
+// ==========================
+
+model AdminUser {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  name            String
+  passwordHash    String
+  role            AdminRole        @default(ACADEMIC_ADMIN)
+  avatarUrl       String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  auditLogs       AuditLog[]
+  assignedClasses BimbelClass[]    @relation("TutorClasses")
+  resolvedReports QuestionReport[] @relation("ResolvedBy")
+}
+
+model AuditLog {
+  id           String    @id @default(uuid())
+  adminId      String
+  admin        AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action       String // e.g. "CREATE_QUESTION", "UPDATE_PASSING_GRADE", "APPROVE_PAYOUT"
+  targetEntity String // "QuestionBank", "TryoutPackage", "Transaction"
+  targetId     String
+  detailsJson  String?   @db.Text
+  ipAddress    String?
+  createdAt    DateTime  @default(now())
+
+  @@index([adminId, targetEntity, createdAt])
+}
+
+// ==========================
+// USER & SECURITY MANAGEMENT
+// ==========================
+
+model User {
+  id               String                 @id @default(uuid())
+  username         String                 @unique
+  email            String                 @unique
+  passwordHash     String
+  role             Role                   @default(STUDENT)
+  isActive         Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  profile          Profile?
+  preferences      UserPreference?
+  sessions         AuthSession[]
+  approvalRequests LoginApprovalRequest[]
+  examSessions     ExamSession[]
+  userAnswers      ExamAnswer[]
+  transactions     Transaction[]
+  referralCode     ReferralCode?
+  referredBy       ReferralUsage[]        @relation("ReferredUser")
+  attendances      ClassAttendance[]
+  assignments      AssignmentSubmission[]
+  mistakeNotes     MistakeNotebook[]
+  ratings          TryoutRating[]
+  questionReports  QuestionReport[]
+  payouts          AffiliatePayout[]
+  tenantId         String?
+  tenant           Tenant?                @relation(fields: [tenantId], references: [id])
+}
+
+model Profile {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName     String
+  phone        String?
+  city         String?
+  province     String?
+  targetSchool String? // e.g. "PKN STAN", "STIS", "IPDN"
+  avatarUrl    String?
+  gender       Gender?
+  birthDate    DateTime?
+}
+
+model UserPreference {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studyTime     String? // pagi, sore, malam, dini
+  learningStyle String? // membaca, menonton, latihan
+  dailyDuration String? // 1_2, 3_5, 6
+  prepType      String? // mandiri, kelas
+  sourceInfo    String? // Instagram, TikTok, teman
+}
+
+// Single-device active session enforcement
+model AuthSession {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId     String // UUID stored in client localStorage
+  deviceInfo   String? // User-Agent, OS, Browser
+  ipAddress    String?
+  isActive     Boolean  @default(true)
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([userId, deviceId])
+}
+
+model LoginApprovalRequest {
+  id            String         @id @default(uuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  newDeviceId   String
+  newDeviceInfo String?
+  ipAddress     String?
+  status        ApprovalStatus @default(PENDING)
+  expiresAt     DateTime
+  createdAt     DateTime       @default(now())
+
+  @@index([id, status])
+}
+
+// ==========================
+// PRODUCTS & COMMERCE
+// ==========================
+
+model Product {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  category    String // "tryout", "bimbel", "bundling"
+  periodText  String? // "2026"
+  price       Decimal  @db.Decimal(12, 2)
+  coverImage  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  benefits       ProductBenefit[]
+  tryoutPackages TryoutPackage[]
+  classes        BimbelClass[]
+  transactions   TransactionItem[]
+  tenantId       String?
+  tenant         Tenant?           @relation(fields: [tenantId], references: [id])
+}
+
+model ProductBenefit {
+  id          String  @id @default(uuid())
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  benefitText String
+  sortOrder   Int     @default(0)
+}
+
+model Coupon {
+  id            String    @id @default(uuid())
+  code          String    @unique
+  discountType  String // "FIXED", "PERCENT"
+  discountValue Decimal   @db.Decimal(12, 2)
+  maxDiscount   Decimal?  @db.Decimal(12, 2)
+  minSpend      Decimal?  @db.Decimal(12, 2)
+  maxUsage      Int?
+  usageCount    Int       @default(0)
+  validUntil    DateTime?
+  isActive      Boolean   @default(true)
+}
+
+model Transaction {
+  id             String            @id @default(uuid())
+  invoiceNumber  String            @unique
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalAmount    Decimal           @db.Decimal(12, 2)
+  discountAmount Decimal           @default(0) @db.Decimal(12, 2)
+  paymentMethod  String?
+  paymentChannel String? // "qris", "bca_va", "indomaret"
+  paymentFee     Decimal           @default(0) @db.Decimal(12, 2)
+  status         TransactionStatus @default(PENDING)
+  paymentUrl     String?
+  qrCodeUrl      String?
+  vaNumber       String?
+  paidAt         DateTime?
+  expiresAt      DateTime
+  createdAt      DateTime          @default(now())
+
+  items         TransactionItem[]
+  referralUsage ReferralUsage?
+}
+
+model TransactionItem {
+  id            String      @id @default(uuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+  price         Decimal     @db.Decimal(12, 2)
+}
+
+model ReferralCode {
+  id            String            @id @default(uuid())
+  userId        String            @unique
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code          String            @unique
+  commissionPct Decimal           @default(10.0) @db.Decimal(5, 2)
+  totalEarned   Decimal           @default(0) @db.Decimal(12, 2)
+  payouts       AffiliatePayout[]
+}
+
+model ReferralUsage {
+  id               String      @id @default(uuid())
+  referralCodeId   String
+  userId           String // Referrer
+  buyerId          String // New customer
+  buyer            User        @relation("ReferredUser", fields: [buyerId], references: [id])
+  transactionId    String      @unique
+  transaction      Transaction @relation(fields: [transactionId], references: [id])
+  commissionEarned Decimal     @db.Decimal(12, 2)
+  createdAt        DateTime    @default(now())
+}
+
+model AffiliatePayout {
+  id             String        @id @default(uuid())
+  referralCodeId String
+  referralCode   ReferralCode  @relation(fields: [referralCodeId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount         Decimal       @db.Decimal(12, 2)
+  bankName       String // BCA, Mandiri, BRI, GoPay, OVO
+  accountNumber  String
+  accountHolder  String
+  proofImageUrl  String?
+  status         PayoutStatus  @default(PENDING)
+  notes          String?
+  processedAt    DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([userId, status])
+}
+
+// ==========================
+// CBT / CAT EXAM SYSTEM
+// ==========================
+
+model TryoutPackage {
+  id              String   @id @default(uuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  durationMinutes Int      @default(100)
+  totalQuestions  Int      @default(110)
+  passingGradeTwk Int      @default(65)
+  passingGradeTiu Int      @default(80)
+  passingGradeTkp Int      @default(166)
+  isPublished     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  questions TryoutQuestion[]
+  sessions  ExamSession[]
+  ratings   TryoutRating[]
+}
+
+model QuestionBank {
+  id              String          @id @default(uuid())
+  subtest         SubtestType
+  topic           String // e.g. "Pancasila", "Silogisme", "Pelayanan Publik"
+  subTopic        String? // e.g. "Pengamalan Sila ke-2"
+  difficulty      DifficultyLevel @default(MEDIUM)
+  questionText    String          @db.Text
+  questionImage   String?
+  discussionText  String          @db.Text
+  discussionImage String?
+  isVerified      Boolean         @default(true)
+  verifiedById    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @default(now()) @updatedAt
+
+  options         QuestionOption[]
+  tryoutQuestions TryoutQuestion[]
+  mistakeNotes    MistakeNotebook[]
+  reports         QuestionReport[]
+
+  @@index([subtest, topic, difficulty])
+}
+
+model QuestionOption {
+  id          String       @id @default(uuid())
+  questionId  String
+  question    QuestionBank @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionLabel String // "A", "B", "C", "D", "E"
+  optionText  String       @db.Text
+  optionImage String?
+  score       Int          @default(0) // TWK/TIU: 0 or 5. TKP: 1 to 5.
+  isCorrect   Boolean      @default(false)
+}
+
+model TryoutQuestion {
+  id             String        @id @default(uuid())
+  tryoutId       String
+  tryout         TryoutPackage @relation(fields: [tryoutId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       QuestionBank  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionNumber Int
+
+  @@unique([tryoutId, questionNumber])
+}
+
+model ExamSession {
+  id              String        @id @default(uuid())
+  tryoutId        String
+  tryout          TryoutPackage @relation(fields: [tryoutId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  durationLeftSec Int
+  scoreTwk        Int           @default(0)
+  scoreTiu        Int           @default(0)
+  scoreTkp        Int           @default(0)
+  totalScore      Int           @default(0)
+  isPassed        Boolean       @default(false)
+  isCompleted     Boolean       @default(false)
+  startedAt       DateTime      @default(now())
+  completedAt     DateTime?
+
+  answers ExamAnswer[]
+
+  @@index([userId, tryoutId])
+}
+
+model ExamAnswer {
+  id               String      @id @default(uuid())
+  sessionId        String
+  session          ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionNumber   Int
+  selectedOptionId String?
+  isDoubtful       Boolean     @default(false)
+  scoreEarned      Int         @default(0)
+  answeredAt       DateTime    @default(now())
+
+  @@unique([sessionId, questionNumber])
+}
+
+model MistakeNotebook {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       QuestionBank @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  isReviewed     Boolean      @default(false)
+  lastReviewedAt DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, questionId])
+}
+
+model TryoutRating {
+  id        String        @id @default(uuid())
+  tryoutId  String
+  tryout    TryoutPackage @relation(fields: [tryoutId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int // 1 to 5
+  feedback  String?
+  createdAt DateTime      @default(now())
+
+  @@unique([tryoutId, userId])
+}
+
+model QuestionReport {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  questionId   String
+  question     QuestionBank @relation(fields: [questionId], references: [id])
+  reportType   String // "Kunci Jawaban Salah", "Soal Ambiguitas", "Gambar Rusak"
+  notes        String
+  status       String       @default("PENDING") // PENDING, RESOLVED, REJECTED
+  resolvedById String?
+  resolvedBy   AdminUser?   @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  resolvedAt   DateTime?
+  adminNotes   String?
+  createdAt    DateTime     @default(now())
+}
+
+// ==========================
+// BIMBEL & LMS CLASSES
+// ==========================
+
+model BimbelClass {
+  id          String      @id @default(uuid())
+  productId   String
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  tutorName   String
+  tutorAvatar String?
+  tutorId     String?
+  tutor       AdminUser?  @relation("TutorClasses", fields: [tutorId], references: [id])
+
+  schedules   ClassSchedule[]
+  assignments ClassAssignment[]
+  recordings  ClassRecording[]
+  tenantId    String?
+  tenant      Tenant?           @relation(fields: [tenantId], references: [id])
+}
+
+model ClassSchedule {
+  id          String            @id @default(uuid())
+  classId     String
+  bimbelClass BimbelClass       @relation(fields: [classId], references: [id], onDelete: Cascade)
+  topic       String
+  startTime   DateTime
+  endTime     DateTime
+  meetingUrl  String? // Zoom / GMeet link
+  attendances ClassAttendance[]
+}
+
+model ClassAttendance {
+  id         String        @id @default(uuid())
+  scheduleId String
+  schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendedAt DateTime      @default(now())
+
+  @@unique([scheduleId, userId])
+}
+
+model ClassAssignment {
+  id          String                 @id @default(uuid())
+  classId     String
+  bimbelClass BimbelClass            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  title       String
+  instruction String                 @db.Text
+  deadline    DateTime
+  submissions AssignmentSubmission[]
+}
+
+model AssignmentSubmission {
+  id           String          @id @default(uuid())
+  assignmentId String
+  assignment   ClassAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileUrl      String
+  score        Int?
+  feedback     String?
+  submittedAt  DateTime        @default(now())
+
+  @@unique([assignmentId, userId])
+}
+
+model ClassRecording {
+  id           String      @id @default(uuid())
+  classId      String
+  bimbelClass  BimbelClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  title        String
+  videoUrl     String // YouTube unlisted, Vimeo, or S3 HLS
+  durationText String?
+  sortOrder    Int         @default(0)
+}
+
+// ==========================
+// CMS & APP SETTINGS
+// ==========================
+
+model SpotlightBanner {
+  id        String   @id @default(uuid())
+  title     String
+  subtitle  String?
+  imageUrl  String
+  linkUrl   String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+}
+
+// ==========================================
+// 1. GLOBAL SYSTEM SETTINGS (KEY-VALUE PAIR)
+// ==========================================
+model AppSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique // Cth: "MAINTENANCE_MODE", "ACTIVE_PAYMENT_GATEWAY"
+  value       String   @db.Text
+  category    String   @default("general") // "general", "notification", "payment", "security", "seo", "storage"
+  isSecret    Boolean  @default(false) // Jika true, nilai disensor di frontend (API Key, Secret)
+  updatedAt   DateTime @default(now()) @updatedAt
+  updatedBy   String?
+}
+
+// ==========================================
+// 2. WHITELABEL & MULTI-TENANT MITRA
+// ==========================================
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+  EXPIRED
+}
+
+model Tenant {
+  id              String        @id @default(uuid())
+  slug            String        @unique // Subdomain: cth "mitrastan" -> mitrastan.loloskampus.com
+  customDomain    String?       @unique // Cth: "bimbel.mitradigital.com"
+  domainVerified  Boolean       @default(false)
+  status          TenantStatus  @default(ACTIVE)
+
+  // Identitas Brand (Whitelabel)
+  brandName       String
+  tagline         String?
+  logoUrl         String?
+  faviconUrl      String?
+  primaryColor    String        @default("#0F172A") // Hex warna utama
+  secondaryColor  String        @default("#E11D48") // Hex warna aksen
+  supportEmail    String?
+  supportWhatsapp String?
+
+  // SEO & Meta
+  metaTitle       String?
+  metaDescription String?       @db.Text
+
+  // Konfigurasi Notifikasi Sendiri (Opsional per Tenant)
+  customWaActive  Boolean       @default(false)
+  waProvider      String?       // "OFFICIAL_META", "UNOFFICIAL_BAILEYS", "FONNTE", "BION_GATEWAY"
+  waApiKey        String?
+  waSenderNumber  String?
+
+  // Konfigurasi Pembayaran Sendiri (Opsional per Tenant)
+  customPayActive Boolean       @default(false)
+  payProvider     String?       // "DUITKU", "MIDTRANS", "BIONPAY"
+  payApiKey       String?
+  paySecretKey    String?
+  payMerchantId   String?
+
+  // Kuota & Paket Langganan Mitra
+  maxStudents     Int           @default(100)
+  activeStudents  Int           @default(0)
+  validUntil      DateTime?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  users           User[]
+  products        Product[]
+  classes         BimbelClass[]
+}
+
+// ==========================================
+// 3. LOG NOTIFIKASI TERKIRIM
+// ==========================================
+enum NotificationChannel {
+  WHATSAPP
+  EMAIL
+  PUSH
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+}
+
+model NotificationLog {
+  id          String              @id @default(uuid())
+  tenantId    String?
+  channel     NotificationChannel
+  provider    String              // "META_CLOUD", "BAILEYS", "RESEND", "SMTP", "BION_GATEWAY"
+  recipient   String              // Nomor WA atau Email
+  templateKey String              // "INVOICE_PAID", "EXAM_REMINDER", "LOGIN_APPROVAL"
+  payloadJson String?             @db.Text
+  status      NotificationStatus  @default(QUEUED)
+  errorReason String?
+  sentAt      DateTime?
+  createdAt   DateTime            @default(now())
+
+  @@index([recipient, status, createdAt])
+}
