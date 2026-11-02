@@ -58,25 +58,25 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-canvas-dark/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-white/10 bg-white/85 dark:bg-canvas-dark/85 backdrop-blur-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-rose-600 flex items-center justify-center text-white shadow-md shadow-rose-600/10 group-hover:scale-105 transition-transform">
-            <GraduationCap className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-rose-600 flex items-center justify-center text-white shadow-md shadow-slate-950/20 dark:shadow-rose-600/25 group-hover:scale-105 transition-transform duration-200">
+            <GraduationCap className="w-5 h-5 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white leading-tight">
+            <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white leading-tight">
               LOLOS<span className="text-rose-600">KAMPUS</span>
             </span>
-            <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+            <span className="text-[9px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase">
               CBT KEDINASAN & CPNS
             </span>
           </div>
         </Link>
 
         {/* Desktop Nav Items */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-1 bg-slate-100/70 dark:bg-white/[0.04] p-1 rounded-xl border border-slate-200/50 dark:border-white/5">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
@@ -84,13 +84,13 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`btn-interactive px-3.5 py-2 rounded-lg text-xs font-semibold ${
+                className={`btn-interactive px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   isActive
-                    ? "bg-slate-100 dark:bg-surface-elevated text-rose-600 dark:text-rose-400"
-                    : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
+                    ? "bg-white dark:bg-surface-elevated text-rose-600 dark:text-rose-400 shadow-sm"
+                    : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/5"
                 }`}
               >
-                <Icon className="w-4 h-4 mr-1.5 opacity-80" />
+                <Icon className="w-3.5 h-3.5 mr-1.5 opacity-80" />
                 {link.label}
               </Link>
             );

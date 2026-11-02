@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { LoginApprovalModal } from "@/components/LoginApprovalModal";
 
@@ -28,9 +29,9 @@ export default function RootLayout({
         <Navbar />
         <LoginApprovalModal />
         <main className="flex-1">{children}</main>
+        <Footer />
         <MobileBottomNav />
       </body>
     </html>
   );
 }
-

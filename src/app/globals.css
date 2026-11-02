@@ -4,12 +4,12 @@
 
 @layer base {
   :root {
-    --background: #ffffff;
+    --background: #f8fafc;
     --foreground: #0f172a;
     --border: #e2e8f0;
     --input: #e2e8f0;
     --ring: #0f172a;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     --brand-rose: #e11d48;
     --brand-orange: #f97316;
   }
@@ -40,16 +40,77 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ==========================================================================
+   STYLE UI DESIGN TOKENS & TACTILE PRIMITIVES
+   (Inspired by Style UI: Aceternity, Grainient Supply, PatternCraft)
+   ========================================================================== */
+
+/* Subtle Geometric Dot Grid (Zero-overhead PatternCraft style) */
+.bg-dot-pattern {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dark .bg-dot-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Modern Bento Card with Hairline Border & Subtle Lift */
+.bento-card {
+  position: relative;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  transition: all 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+}
+
+.dark .bento-card {
+  background-color: #0f172a;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(225, 29, 72, 0.15);
+}
+
+.dark .bento-card:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(225, 29, 72, 0.3);
+}
+
+/* Tactile Glass Panel (Glass / Samasante style without heavy blur) */
+.glass-surface {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.dark .glass-surface {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 /* Anti-Slop 8-State Interactive Feedback Button Primitives */
 .btn-interactive {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-weight: 500;
-  transition: all 140ms cubic-bezier(0.23, 1, 0.32, 1);
+  font-weight: 600;
+  transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
   user-select: none;
   outline: none;
+  cursor: pointer;
+}
+
+.btn-interactive:hover {
+  filter: brightness(1.05);
 }
 
 .btn-interactive:focus-visible {
@@ -58,11 +119,34 @@
 }
 
 .btn-interactive:active {
-  transform: scale(0.98);
+  transform: scale(0.975);
 }
 
 .btn-interactive:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* Custom Minimalist Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
 }

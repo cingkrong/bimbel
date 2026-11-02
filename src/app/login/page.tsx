@@ -4,7 +4,19 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getOrCreateDeviceId, getClientDeviceInfo } from "@/lib/device";
-import { GraduationCap, ShieldAlert, Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
+import {
+  GraduationCap,
+  ShieldAlert,
+  Lock,
+  Mail,
+  ArrowRight,
+  Loader2,
+  Eye,
+  EyeOff,
+  Sparkles,
+  KeyRound,
+  ShieldCheck
+} from "lucide-react";
 
 function LoginContent() {
   const router = useRouter();
@@ -13,6 +25,7 @@ function LoginContent() {
 
   const [email, setEmail] = useState("siswa@loloskampus.com");
   const [password, setPassword] = useState("password123");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [deviceId, setDeviceId] = useState("");
@@ -65,96 +78,159 @@ function LoginContent() {
     }
   };
 
+  const fillDemo = (role: "siswa" | "admin") => {
+    if (role === "siswa") {
+      setEmail("siswa@loloskampus.com");
+      setPassword("password123");
+    } else {
+      setEmail("admin@loloskampus.com");
+      setPassword("password123");
+    }
+    setErrorMsg("");
+  };
+
   return (
-    <div className="w-full max-w-md space-y-8">
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-rose-600 text-white shadow-lg shadow-rose-600/30 mb-4">
-          <GraduationCap className="w-7 h-7" />
+    <div className="w-full max-w-md space-y-6">
+      {/* Brand Icon & Heading */}
+      <div className="text-center space-y-2">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-rose-600 text-white shadow-lg shadow-rose-600/30 mb-2 ring-4 ring-rose-500/10">
+          <GraduationCap className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Masuk ke Portal LolosKampus
+        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          Masuk Portal Siswa
         </h2>
-        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+        <p className="text-xs text-slate-600 dark:text-slate-400">
           Akses simulasi ujian CAT BKN SKD Kedinasan & CPNS 2026
         </p>
       </div>
 
-      {reason === "session_transferred" && (
-        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-3">
-          <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-600" />
-          <span>
-            Sesi Anda telah dialihkan ke perangkat baru sesuai persetujuan. Silakan login kembali jika ingin menggunakan perangkat ini.
-          </span>
-        </div>
-      )}
+      {/* Login Card */}
+      <div className="p-7 sm:p-8 rounded-3xl bg-white/95 dark:bg-surface-dark/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xl space-y-6">
+        {reason === "session_transferred" && (
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-3">
+            <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-600" />
+            <span>
+              Sesi Anda telah dialihkan ke perangkat baru. Silakan login kembali jika ingin menggunakan perangkat ini.
+            </span>
+          </div>
+        )}
 
-      {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-3">
-          <ShieldAlert className="w-5 h-5 flex-shrink-0" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
+        {errorMsg && (
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-3">
+            <ShieldAlert className="w-5 h-5 flex-shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-            Alamat Email Siswa
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <Mail className="w-4 h-4" />
-            </div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="nama@email.com"
-              className="w-full pl-10 pr-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-surface-dark text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-            />
+        {/* Quick-fill Pills */}
+        <div className="space-y-1.5">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Akun Percobaan (1-Click Fill):
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => fillDemo("siswa")}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold border transition-all ${
+                email.includes("siswa")
+                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 border-rose-200 dark:border-rose-900/40"
+                  : "bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-white/10 hover:bg-slate-100"
+              }`}
+            >
+              Siswa Demo
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemo("admin")}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold border transition-all ${
+                email.includes("admin")
+                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 border-rose-200 dark:border-rose-900/40"
+                  : "bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-white/10 hover:bg-slate-100"
+              }`}
+            >
+              Admin Demo
+            </button>
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-            Kata Sandi
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <Lock className="w-4 h-4" />
+        {/* Form Fields */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+              Alamat Email
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <Mail className="w-4 h-4" />
+              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="nama@email.com"
+                className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-white/5 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all font-medium"
+              />
             </div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              className="w-full pl-10 pr-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-surface-dark text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-            />
           </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+              Kata Sandi
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <Lock className="w-4 h-4" />
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-white/5 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all font-medium"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-interactive w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-rose-600/30 flex items-center justify-center gap-2 mt-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Memverifikasi Perangkat...</span>
+              </>
+            ) : (
+              <>
+                <span>Masuk ke Sistem CAT</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="pt-2 border-t border-slate-100 dark:border-white/5 text-center text-xs text-slate-500">
+          Belum memiliki paket belajar?{" "}
+          <Link href="/paket" className="font-bold text-rose-600 hover:text-rose-700">
+            Daftar & Pilih Paket Bimbel
+          </Link>
         </div>
+      </div>
 
-        <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800/40 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
-          <div className="font-semibold text-slate-800 dark:text-slate-200">Kredensial Demo:</div>
-          <div>Siswa: <code className="text-rose-600 font-bold">siswa@loloskampus.com</code> / <code className="text-rose-600 font-bold">password123</code></div>
-          <div>Admin: <code className="text-slate-600 font-bold">admin@loloskampus.com</code> / <code className="text-slate-600 font-bold">password123</code></div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn-interactive w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold shadow-md shadow-rose-600/20"
-        >
-          {loading ? "Memverifikasi Perangkat..." : "Masuk ke Sistem CAT"}
-          <ArrowRight className="w-4 h-4 ml-1.5" />
-        </button>
-      </form>
-
-      <div className="text-center text-xs text-slate-500 dark:text-slate-400">
-        Belum punya akun?{" "}
-        <Link href="/paket" className="font-semibold text-rose-600 hover:text-rose-700">
-          Daftar & Pilih Paket Bimbel
-        </Link>
+      {/* Security Footnote */}
+      <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400">
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+        <span>Dilindungi enkripsi perangkat tunggal & deteksi sesi aktif</span>
       </div>
     </div>
   );
@@ -162,10 +238,16 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <Suspense fallback={<Loader2 className="w-8 h-8 animate-spin text-rose-600" />}>
-        <LoginContent />
-      </Suspense>
+    <div className="relative min-h-[90vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden bg-slate-50 dark:bg-canvas-dark">
+      {/* Background Dot Matrix & Spotlight */}
+      <div className="absolute inset-0 bg-dot-pattern opacity-40 dark:opacity-20 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-rose-500/10 dark:bg-rose-600/10 blur-[120px] rounded-full pointer-events-none" />
+
+      <div className="relative z-10 w-full flex justify-center">
+        <Suspense fallback={<Loader2 className="w-8 h-8 animate-spin text-rose-600" />}>
+          <LoginContent />
+        </Suspense>
+      </div>
     </div>
   );
 }
