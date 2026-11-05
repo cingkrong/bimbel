@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatRupiah } from "@/lib/utils";
 import {
@@ -84,7 +84,7 @@ function TransaksiContent() {
   const [couponMaxUsage, setCouponMaxUsage] = useState(100);
   const [isSubmittingCoupon, setIsSubmittingCoupon] = useState(false);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     setLoading(true);
     try {
       const url = txStatus === "ALL" ? "/api/admin/transactions" : `/api/admin/transactions?status=${txStatus}`;
@@ -98,9 +98,9 @@ function TransaksiContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [txStatus]);
 
-  const fetchCoupons = async () => {
+  const fetchCoupons = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/coupons");
@@ -113,9 +113,9 @@ function TransaksiContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchPayouts = async () => {
+  const fetchPayouts = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/payouts");
@@ -128,13 +128,13 @@ function TransaksiContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (activeTab === "TRANSACTIONS") fetchTransactions();
     if (activeTab === "COUPONS") fetchCoupons();
     if (activeTab === "PAYOUTS") fetchPayouts();
-  }, [activeTab, txStatus]);
+  }, [activeTab, fetchTransactions, fetchCoupons, fetchPayouts]);
 
   const handleManualVerify = async (txId: string) => {
     if (!confirm("Konfirmasi verifikasi manual transaksi ini menjadi LUNAS (PAID)?")) return;

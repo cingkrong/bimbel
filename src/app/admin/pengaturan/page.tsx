@@ -1320,7 +1320,7 @@ function SettingsContent() {
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-500 italic">"{ten.tagline || "Portal Bimbel Kedinasan"}"</p>
+                  <p className="text-xs text-slate-500 italic">&ldquo;{ten.tagline || "Portal Bimbel Kedinasan"}&rdquo;</p>
 
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 space-y-2 text-xs">
                     <div className="flex justify-between items-center">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useExamStore } from "@/store/useExamStore";
 import { formatTimeSeconds } from "@/lib/utils";
@@ -84,14 +84,7 @@ export default function ExamEnginePage() {
     return () => clearInterval(interval);
   }, [loading, isCompleted, resultData, decrementTimer]);
 
-  // 3. Auto-submit when timer expires
-  useEffect(() => {
-    if (!loading && durationLeftSec === 0 && !isCompleted && !resultData && sessionId) {
-      handleFinishExam();
-    }
-  }, [durationLeftSec, loading, isCompleted, resultData, sessionId]);
-
-  const handleFinishExam = async () => {
+  const handleFinishExam = useCallback(async () => {
     if (!sessionId || isSubmitting) return;
     setSubmitting(true);
 
@@ -122,7 +115,14 @@ export default function ExamEnginePage() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [sessionId, isSubmitting, setSubmitting]);
+
+  // 3. Auto-submit when timer expires
+  useEffect(() => {
+    if (!loading && durationLeftSec === 0 && !isCompleted && !resultData && sessionId) {
+      handleFinishExam();
+    }
+  }, [durationLeftSec, loading, isCompleted, resultData, sessionId, handleFinishExam]);
 
   if (loading) {
     return (

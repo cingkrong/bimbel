@@ -304,10 +304,10 @@ function CheckoutContent() {
                     />
                     <div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white">
-                        Mandiri Virtual Account (Livin')
+                        Mandiri Virtual Account (Livin&apos;)
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        Transfer via ATM atau Livin' by Mandiri
+                        Transfer via ATM atau Livin&apos; by Mandiri
                       </div>
                     </div>
                   </div>

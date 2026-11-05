@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Flag,
   CheckCircle2,
@@ -59,7 +59,7 @@ export default function LaporanSoalAdminPage() {
   const [adminNoteInput, setAdminNoteInput] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
       const url =
@@ -76,11 +76,11 @@ export default function LaporanSoalAdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedStatus]);
 
   useEffect(() => {
     fetchReports();
-  }, [selectedStatus]);
+  }, [fetchReports]);
 
   const openReviewModal = (rep: Report) => {
     setReviewingReport(rep);
@@ -265,7 +265,7 @@ export default function LaporanSoalAdminPage() {
             {/* Student Note Box */}
             <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-300">
               <strong className="block mb-1">Catatan Siswa:</strong>
-              <p className="italic">"{reviewingReport.notes}"</p>
+              <p className="italic">&ldquo;{reviewingReport.notes}&rdquo;</p>
             </div>
 
             {/* Question Box */}

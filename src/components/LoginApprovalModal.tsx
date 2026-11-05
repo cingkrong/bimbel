@@ -32,7 +32,7 @@ export function LoginApprovalModal() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [pathname]);
 
   if (pathname.startsWith("/admin") || !pendingRequest) return null;
 

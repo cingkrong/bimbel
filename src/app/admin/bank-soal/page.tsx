@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useCallback } from "react";
 import {
   Database,
   Plus,
@@ -74,7 +74,7 @@ export default function BankSoalAdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -92,11 +92,11 @@ export default function BankSoalAdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedSubtest, selectedDifficulty, searchQuery]);
 
   useEffect(() => {
     fetchQuestions();
-  }, [selectedSubtest, selectedDifficulty]);
+  }, [fetchQuestions]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

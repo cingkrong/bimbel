@@ -228,7 +228,7 @@ export function AdminHeader({ admin }: AdminHeaderProps) {
               ))}
               {filteredLinks.length === 0 && (
                 <div className="p-6 text-center text-xs text-slate-400">
-                  Tidak ada modul yang cocok dengan "{query}".
+                  Tidak ada modul yang cocok dengan &ldquo;{query}&rdquo;.
                 </div>
               )}
             </div>

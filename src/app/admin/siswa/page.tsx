@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Users,
   Search,
@@ -52,7 +52,7 @@ export default function SiswaAdminPage() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isResetting, setIsResetting] = useState(false);
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     setLoading(true);
     try {
       const url = search.trim()
@@ -68,11 +68,11 @@ export default function SiswaAdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search]);
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [fetchStudents]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

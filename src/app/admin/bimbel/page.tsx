@@ -299,7 +299,7 @@ export default function BimbelAdminPage() {
             </div>
           ) : !currentClass?.schedules?.length ? (
             <div className="p-8 text-center text-xs text-slate-400">
-              Belum ada jadwal sesi kelas live. Klik "Jadwalkan Sesi Zoom Baru" untuk menambahkan.
+              Belum ada jadwal sesi kelas live. Klik &quot;Jadwalkan Sesi Zoom Baru&quot; untuk menambahkan.
             </div>
           ) : (
             <div className="overflow-x-auto">

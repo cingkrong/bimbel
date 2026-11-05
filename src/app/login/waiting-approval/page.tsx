@@ -64,7 +64,7 @@ function WaitingApprovalContent() {
               <span>Akun Anda sedang aktif di perangkat lain.</span>
             </div>
             <p>
-              Notifikasi persetujuan telah dikirimkan ke perangkat utama Anda. Silakan klik tombol <b>"Izinkan & Keluar"</b> pada perangkat tersebut untuk melanjutkan login di browser ini.
+              Notifikasi persetujuan telah dikirimkan ke perangkat utama Anda. Silakan klik tombol <b>&quot;Izinkan &amp; Keluar&quot;</b> pada perangkat tersebut untuk melanjutkan login di browser ini.
             </p>
             <div className="text-[11px] text-slate-400 pt-1 font-mono">
               Request ID: {requestId?.slice(0, 8)}...
