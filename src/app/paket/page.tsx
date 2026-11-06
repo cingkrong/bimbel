@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Smartphone
 } from "lucide-react";
+import { TrackViewContent } from "@/components/analytics/TrackViewContent";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,10 @@ export default async function PricingPackagesPage() {
 
   return (
     <div className="relative min-h-screen bg-slate-50 dark:bg-canvas-dark text-slate-900 dark:text-slate-100 overflow-hidden">
+      <TrackViewContent
+        contentName="Katalog Paket Bimbel & Tryout 2026"
+        value={Number(products[0]?.price || 99000)}
+      />
       {/* Background Dot Matrix & Spotlight */}
       <div className="absolute inset-0 bg-dot-pattern opacity-40 dark:opacity-20 pointer-events-none" />
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-rose-500/10 dark:bg-rose-600/10 blur-[130px] rounded-full pointer-events-none" />

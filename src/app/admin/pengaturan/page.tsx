@@ -32,7 +32,10 @@ import {
   Sliders,
   Check,
   Eye,
-  EyeOff
+  EyeOff,
+  Target,
+  Megaphone,
+  ShieldCheck
 } from "lucide-react";
 
 interface Banner {
@@ -99,6 +102,13 @@ function SettingsContent() {
   const [testWaRecipient, setTestWaRecipient] = useState("081234567890");
   const [testingGateway, setTestingGateway] = useState<string | null>(null);
   const [testingStorage, setTestingStorage] = useState(false);
+  const [testingMetaCapi, setTestingMetaCapi] = useState(false);
+  const [metaTestResult, setMetaTestResult] = useState<{
+    success: boolean;
+    message: string;
+    eventsReceived?: number;
+    fbtraceId?: string;
+  } | null>(null);
   const [verifyingCname, setVerifyingCname] = useState<string | null>(null);
 
   // Modals
@@ -272,6 +282,43 @@ function SettingsContent() {
     }
   };
 
+  // Test Meta Conversions API (CAPI)
+  const handleTestMetaCapi = async () => {
+    setTestingMetaCapi(true);
+    setMetaTestResult(null);
+    try {
+      const res = await fetch("/api/admin/settings/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "TEST_META_CAPI",
+          payload: {
+            pixelId: settings.meta_pixel_id,
+            accessToken: settings.meta_capi_token,
+            testEventCode: settings.meta_test_event_code,
+          },
+        }),
+      });
+      const json = await res.json();
+      setMetaTestResult({
+        success: res.ok,
+        message: json.message || (res.ok ? "Event CAPI berhasil diterima Meta!" : json.error),
+        eventsReceived: json.details?.eventsReceived,
+        fbtraceId: json.details?.fbtraceId,
+      });
+      if (res.ok) {
+        showToast("Event uji coba Meta Conversions API berhasil terkirim!");
+      }
+    } catch (err: any) {
+      setMetaTestResult({
+        success: false,
+        message: err.message || "Gagal menghubungi server pengujian Meta.",
+      });
+    } finally {
+      setTestingMetaCapi(false);
+    }
+  };
+
   // Check CNAME
   const handleCheckCname = async (tenant: Tenant) => {
     if (!tenant.customDomain) return;
@@ -388,6 +435,7 @@ function SettingsContent() {
   const subTabs = [
     { id: "notification", label: "Layanan Notifikasi", icon: Bell },
     { id: "payment", label: "Gateway Pembayaran", icon: CreditCard },
+    { id: "marketing", label: "Meta Ads & Tracking", icon: Target },
     { id: "whitelabel", label: "Whitelabel & Custom Domain", icon: Building2 },
     { id: "security", label: "Keamanan & Sesi", icon: ShieldAlert },
     { id: "storage", label: "Storage & Media (R2/S3)", icon: HardDrive },
@@ -1249,8 +1297,323 @@ function SettingsContent() {
       )}
 
       {/* =========================================================================
-          TAB 3: WHITELABEL & CUSTOM DOMAIN MITRA (MULTI-TENANT)
+          TAB: META ADS & TRACKING (PIXEL & CONVERSIONS API CAPI)
       ========================================================================= */}
+      {activeTab === "marketing" && (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="p-6 rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-surface-dark shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-900/40">
+                <Target className="w-3.5 h-3.5" />
+                Meta Ads Attribution Engine
+              </div>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">
+                Meta Pixel & Conversions API (CAPI) Dual Tracking
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
+                Maksimalkan ROAS iklan Facebook & Instagram dengan pelacakan hybrid. Menggabungkan Meta Pixel di browser dan Conversions API server-side untuk kebal ad-blocker serta deduplikasi event otomatis via invoice ID.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={settings.meta_ads_active === "true"}
+                  onChange={(e) =>
+                    handleSettingChange("meta_ads_active", e.target.checked ? "true" : "false")
+                  }
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300"
+                />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  {settings.meta_ads_active === "true" ? "Tracking Aktif" : "Tracking Nonaktif"}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left Column: Credentials & Test (7 cols) */}
+            <div className="lg:col-span-7 space-y-6">
+              {/* Credentials Card */}
+              <div className="p-6 rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-surface-dark shadow-sm space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                    <Key className="w-4 h-4 text-rose-600" />
+                    Kredensial Meta Pixel & Token Graph API
+                  </h3>
+                  <a
+                    href="https://business.facebook.com/events_manager"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+                  >
+                    Buka Events Manager
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Meta Dataset / Pixel ID
+                      </label>
+                      <span className="text-[10px] text-slate-400 font-mono">15-16 Digit Angka</span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={settings.meta_pixel_id || ""}
+                        onChange={(e) => handleSettingChange("meta_pixel_id", e.target.value)}
+                        placeholder="Contoh: 109832746192847"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-white/5 text-xs font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      />
+                      {settings.meta_pixel_id && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(settings.meta_pixel_id);
+                            showToast("Pixel ID disalin ke clipboard!");
+                          }}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Dataset ID yang tertera di Meta Business Suite &gt; Events Manager &gt; Data Sources.
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Conversions API (CAPI) System User Access Token
+                      </label>
+                      <span className="text-[10px] text-slate-400">Never Expire Token</span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showSecrets["meta_capi_token"] ? "text" : "password"}
+                        value={settings.meta_capi_token || ""}
+                        onChange={(e) => handleSettingChange("meta_capi_token", e.target.value)}
+                        placeholder="EAABcDefGhiJklMnoPqrStuvWxYz..."
+                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-white/5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSecrets((prev) => ({ ...prev, meta_capi_token: !prev.meta_capi_token }))}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                      >
+                        {showSecrets["meta_capi_token"] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Dihasilkan melalui Events Manager &gt; Settings &gt; Conversions API &gt; Generate Access Token.
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Test Event Code (Opsional)
+                      </label>
+                      <span className="text-[10px] text-slate-400 font-mono">Untuk Tab &quot;Test Events&quot;</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={settings.meta_test_event_code || ""}
+                      onChange={(e) => handleSettingChange("meta_test_event_code", e.target.value)}
+                      placeholder="Contoh: TEST88321"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-white/5 text-xs font-mono uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Kosongkan untuk mode produksi. Isi kode dari tab &quot;Test Events&quot; di Meta saat debugging.
+                    </p>
+                  </div>
+
+                  {/* Test CAPI Button */}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleTestMetaCapi}
+                      disabled={testingMetaCapi || !settings.meta_pixel_id || !settings.meta_capi_token}
+                      className="btn-interactive w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                    >
+                      {testingMetaCapi ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Mengirim Event CAPI Uji Coba ke Meta...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span>Kirim Event Uji Coba (Purchase CAPI) ke Meta Events Manager</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Test Result Box */}
+                  {metaTestResult && (
+                    <div
+                      className={`p-4 rounded-2xl border text-xs space-y-2 animate-in fade-in duration-200 ${
+                        metaTestResult.success
+                          ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40 text-emerald-900 dark:text-emerald-200"
+                          : "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/40 text-rose-800 dark:text-rose-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-bold">
+                        {metaTestResult.success ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-rose-600" />
+                        )}
+                        <span>{metaTestResult.message}</span>
+                      </div>
+                      {metaTestResult.fbtraceId && (
+                        <div className="text-[11px] font-mono text-slate-500 pt-1">
+                          Facebook Trace ID: <code>{metaTestResult.fbtraceId}</code>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Event Mapping & Best Practices (5 cols) */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Event Mapping Card */}
+              <div className="p-6 rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-surface-dark shadow-sm space-y-4">
+                <div className="pb-3 border-b border-slate-100 dark:border-white/5">
+                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-rose-600" />
+                    Pemetaan Event & Deduplikasi
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Pilih event yang dipantau untuk optimasi kampanye Ads
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200/60 dark:border-white/5 hover:bg-slate-50/50 dark:hover:bg-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.meta_track_pageview !== "false"}
+                      onChange={(e) =>
+                        handleSettingChange("meta_track_pageview", e.target.checked ? "true" : "false")
+                      }
+                      className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 mt-0.5"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white font-mono">
+                        PageView
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        Otomatis terlacak pada setiap navigasi rute beranda, katalog tryout, dan bimbel.
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200/60 dark:border-white/5 hover:bg-slate-50/50 dark:hover:bg-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.meta_track_viewcontent !== "false"}
+                      onChange={(e) =>
+                        handleSettingChange("meta_track_viewcontent", e.target.checked ? "true" : "false")
+                      }
+                      className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 mt-0.5"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white font-mono">
+                        ViewContent
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        Dipicu saat siswa melihat detail paket bimbingan dan simulasi CAT di halaman paket.
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200/60 dark:border-white/5 hover:bg-slate-50/50 dark:hover:bg-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.meta_track_initiatecheckout !== "false"}
+                      onChange={(e) =>
+                        handleSettingChange("meta_track_initiatecheckout", e.target.checked ? "true" : "false")
+                      }
+                      className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 mt-0.5"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white font-mono">
+                        InitiateCheckout
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        Dipicu saat formulir checkout dibuka dengan nilai produk dan parameter IDR.
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200/60 dark:border-white/5 hover:bg-slate-50/50 dark:hover:bg-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.meta_track_purchase !== "false"}
+                      onChange={(e) =>
+                        handleSettingChange("meta_track_purchase", e.target.checked ? "true" : "false")
+                      }
+                      className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 mt-0.5"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white font-mono flex items-center gap-1.5">
+                        <span>Purchase</span>
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600">
+                          Dual CAPI + Pixel
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        Dipicu instan via Webhook Server saat QRIS lunas + Client Pixel (deduplikasi invoice ID).
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200/60 dark:border-white/5 hover:bg-slate-50/50 dark:hover:bg-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.meta_track_lead !== "false"}
+                      onChange={(e) =>
+                        handleSettingChange("meta_track_lead", e.target.checked ? "true" : "false")
+                      }
+                      className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 mt-0.5"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white font-mono">
+                        CompleteRegistration / Lead
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        Dipicu saat pendaftaran akun baru atau login siswa berhasil.
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Advanced Matching Note */}
+              <div className="p-5 rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-surface-dark space-y-2 text-xs">
+                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                  Meta Advanced Matching &amp; Privacy
+                </div>
+                <p className="text-slate-500 leading-relaxed text-[11px]">
+                  Seluruh data pelanggan (email, no HP) secara otomatis dienkripsi dengan <b>SHA-256</b> sebelum dikirim ke Meta Graph API sesuai pedoman GDPR dan privasi data Meta. Parameter <code>_fbp</code> dan <code>_fbc</code> (Meta Click ID) disertakan untuk Event Quality Score maksimal (Skor 8.5+ dari 10).
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {activeTab === "whitelabel" && (
         <div className="space-y-6">
           {/* Header & Add Partner Button */}

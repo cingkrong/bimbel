@@ -13,6 +13,13 @@ export async function GET() {
       whatsapp_hotline: "081234567890",
       maintenance_mode: "false",
       maintenance_message: "",
+      meta_ads_active: "true",
+      meta_pixel_id: "109832746192847",
+      meta_track_pageview: "true",
+      meta_track_viewcontent: "true",
+      meta_track_initiatecheckout: "true",
+      meta_track_purchase: "true",
+      meta_track_lead: "true",
     };
 
     settings.forEach((s) => {
@@ -25,8 +32,9 @@ export async function GET() {
       settings: {
         active_payment_gateway: "BIONPAY_QRIS_ONLY",
         whatsapp_hotline: "081234567890",
+        meta_ads_active: "false",
+        meta_pixel_id: "",
       },
     });
   }
 }
-

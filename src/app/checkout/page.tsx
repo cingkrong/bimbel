@@ -16,6 +16,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { QrisVoucher } from "@/components/payment/QrisVoucher";
+import { trackMetaClientEvent } from "@/components/analytics/MetaPixelProvider";
 
 function CheckoutContent() {
   const router = useRouter();
@@ -55,6 +56,14 @@ function CheckoutContent() {
           const data = await res.json();
           const p = data.products.find((item: any) => item.id === productId) || data.products[0];
           setProduct(p);
+          if (p) {
+            trackMetaClientEvent("InitiateCheckout", {
+              content_name: p.name,
+              content_ids: [p.id],
+              value: Number(p.price),
+              currency: "IDR",
+            });
+          }
         }
       } catch (err) {
         console.error(err);
@@ -143,6 +152,17 @@ function CheckoutContent() {
 
       if (res.ok) {
         setPaymentSuccess(true);
+        trackMetaClientEvent(
+          "Purchase",
+          {
+            content_name: product?.name || "Paket Bimbel CAT",
+            content_ids: product ? [product.id] : [],
+            value: Number(transaction.totalAmount),
+            currency: "IDR",
+            order_id: transaction.invoiceNumber,
+          },
+          transaction.invoiceNumber
+        );
         try {
           confetti({
             particleCount: 120,
@@ -169,6 +189,17 @@ function CheckoutContent() {
         const data = await res.json();
         if (data.isPaid) {
           setPaymentSuccess(true);
+          trackMetaClientEvent(
+            "Purchase",
+            {
+              content_name: product?.name || "Paket Bimbel CAT",
+              content_ids: product ? [product.id] : [],
+              value: Number(transaction.totalAmount),
+              currency: "IDR",
+              order_id: transaction.invoiceNumber,
+            },
+            transaction.invoiceNumber
+          );
           try {
             confetti({
               particleCount: 120,

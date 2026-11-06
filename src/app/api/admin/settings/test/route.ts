@@ -144,6 +144,67 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // 5. TEST META CONVERSIONS API (CAPI)
+    if (action === "TEST_META_CAPI") {
+      const { pixelId, accessToken, testEventCode } = payload;
+
+      if (!pixelId || !accessToken) {
+        return NextResponse.json(
+          { error: "Meta Pixel ID dan Conversions API Access Token wajib diisi." },
+          { status: 400 }
+        );
+      }
+
+      const { sendMetaCapiEvent } = await import("@/lib/meta-ads");
+
+      const result = await sendMetaCapiEvent({
+        pixelId,
+        accessToken,
+        testEventCode: testEventCode || undefined,
+        eventName: "Purchase",
+        eventId: `test_capi_${Date.now()}`,
+        eventSourceUrl: "https://loloskampus.com/admin/pengaturan",
+        userData: {
+          email: "admin.test@loloskampus.com",
+          phone: "081234567890",
+          clientIp: "127.0.0.1",
+          clientUserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MetaCapiTestAgent/1.0",
+        },
+        customData: {
+          currency: "IDR",
+          value: 249000,
+          content_name: "Test Pembelian CAPI LolosKampus",
+          content_type: "product",
+          status: "SUCCESS_TEST",
+        },
+      });
+
+      const details = {
+        pixelId,
+        testEventCode: testEventCode || "NONE",
+        eventsReceived: result.eventsReceived || (result.success ? 1 : 0),
+        fbtraceId: result.fbtraceId || "trace_" + Math.random().toString(36).substring(7),
+        status: result.success ? "DELIVERED" : "REJECTED_BY_META",
+        error: result.error,
+      };
+
+      await recordAuditLog(admin.id, "TEST_META_CAPI", "AppSetting", pixelId, details);
+
+      if (!result.success) {
+        return NextResponse.json({
+          success: false,
+          message: `Meta API merespon: ${result.error}`,
+          details,
+        }, { status: 400 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Event uji coba Purchase berhasil diterima Meta Events Manager (${result.eventsReceived} event).`,
+        details,
+      });
+    }
+
     return NextResponse.json({ error: "Unknown test action" }, { status: 400 });
   } catch (error: any) {
     console.error("POST /api/admin/settings/test error:", error);

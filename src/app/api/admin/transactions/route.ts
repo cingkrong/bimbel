@@ -145,7 +145,79 @@ export async function POST(req: NextRequest) {
         status: "PAID",
         paidAt: new Date(),
       },
+      include: {
+        user: {
+          select: {
+            email: true,
+            profile: {
+              select: {
+                phone: true,
+                fullName: true,
+              },
+            },
+          },
+        },
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
     });
+
+    // Fire Meta CAPI Purchase event
+    try {
+      const metaSettings = await prisma.appSetting.findMany({
+        where: {
+          key: {
+            in: [
+              "meta_ads_active",
+              "meta_pixel_id",
+              "meta_capi_token",
+              "meta_test_event_code",
+              "meta_track_purchase",
+            ],
+          },
+        },
+      });
+
+      const metaMap: Record<string, string> = {};
+      metaSettings.forEach((s) => {
+        metaMap[s.key] = s.value;
+      });
+
+      if (metaMap.meta_ads_active === "true" && metaMap.meta_track_purchase !== "false") {
+        const pixelId = metaMap.meta_pixel_id;
+        const accessToken = metaMap.meta_capi_token;
+
+        if (pixelId && accessToken) {
+          const { sendMetaCapiEvent } = await import("@/lib/meta-ads");
+          await sendMetaCapiEvent({
+            pixelId,
+            accessToken,
+            testEventCode: metaMap.meta_test_event_code || undefined,
+            eventName: "Purchase",
+            eventId: updated.invoiceNumber,
+            eventSourceUrl: "https://loloskampus.com/checkout",
+            userData: {
+              email: updated.user?.email,
+              phone: updated.user?.profile?.phone || undefined,
+              firstName: updated.user?.profile?.fullName?.split(" ")[0] || undefined,
+              lastName: updated.user?.profile?.fullName?.split(" ").slice(1).join(" ") || undefined,
+            },
+            customData: {
+              value: Number(updated.totalAmount),
+              currency: "IDR",
+              content_name: updated.items[0]?.product?.name || "Paket Bimbel CAT",
+              order_id: updated.invoiceNumber,
+              status: "MANUAL_VERIFIED",
+            },
+          });
+        }
+      }
+    } catch (metaErr) {
+      console.error("Meta CAPI manual verify error:", metaErr);
+    }
 
     await recordAuditLog(
       admin.id,

@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getOrCreateDeviceId, getClientDeviceInfo } from "@/lib/device";
+import { trackMetaClientEvent } from "@/components/analytics/MetaPixelProvider";
 import {
   GraduationCap,
   ShieldAlert,
@@ -69,6 +70,10 @@ function LoginContent() {
       }
 
       if (data.status === "SUCCESS") {
+        trackMetaClientEvent("CompleteRegistration", {
+          content_name: "Student Portal Login",
+          status: "success",
+        });
         router.push("/tryout");
         router.refresh();
       }

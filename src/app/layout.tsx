@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { LoginApprovalModal } from "@/components/LoginApprovalModal";
+import { MetaPixelProvider } from "@/components/analytics/MetaPixelProvider";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -26,6 +28,9 @@ export default function RootLayout({
   return (
     <html lang="id" className={montserrat.variable}>
       <body className="font-sans antialiased bg-slate-50 dark:bg-canvas-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col selection:bg-rose-500 selection:text-white">
+        <Suspense fallback={null}>
+          <MetaPixelProvider />
+        </Suspense>
         <Navbar />
         <LoginApprovalModal />
         <main className="flex-1">{children}</main>

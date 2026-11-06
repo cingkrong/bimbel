@@ -88,6 +88,17 @@ const DEFAULT_SETTINGS_MAP: Record<string, { value: string; category: string; is
 
   // Whitelabel
   cname_target: { value: "cname.loloskampus.com", category: "whitelabel" },
+
+  // Meta Ads & Tracking (Pixel & Conversions API CAPI)
+  meta_ads_active: { value: "true", category: "marketing" },
+  meta_pixel_id: { value: "109832746192847", category: "marketing" },
+  meta_capi_token: { value: "EAAGNO4mZAq4EBO123456789abcdefghijklmnopqrstuvwxyz", category: "marketing", isSecret: true },
+  meta_test_event_code: { value: "TEST88321", category: "marketing" },
+  meta_track_pageview: { value: "true", category: "marketing" },
+  meta_track_viewcontent: { value: "true", category: "marketing" },
+  meta_track_initiatecheckout: { value: "true", category: "marketing" },
+  meta_track_purchase: { value: "true", category: "marketing" },
+  meta_track_lead: { value: "true", category: "marketing" },
 };
 
 const MOCK_TENANTS = [
